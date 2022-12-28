@@ -26,10 +26,10 @@ class AuthController extends Controller
     const EVENT_BEFORE_LOGIN_COGNITO = 'beforeLoginCognito';
     const EVENT_AFTER_LOGIN_COGNITO = 'afterLoginCognito';
 
-    protected $allowAnonymous = ['register','confirm','confirmrequest','login',
+    protected array|int|bool $allowAnonymous = ['register','confirm','confirmrequest','login',
             'forgotpasswordrequest','forgotpassword','refresh'];
 
-    public function beforeAction($action)
+    public function beforeAction($action): bool
 	{
 
         $this->enableCsrfValidation = false;

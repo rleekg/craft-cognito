@@ -31,9 +31,9 @@ class SamlController extends Controller
      *         The actions must be in 'kebab-case'
      * @access protected
      */
-    protected $allowAnonymous = ['auth', 'login'];
+    protected array|int|bool $allowAnonymous = ['auth', 'login'];
 
-    public function beforeAction($action)
+    public function beforeAction($action): bool
 	{
 
         $this->enableCsrfValidation = false;
