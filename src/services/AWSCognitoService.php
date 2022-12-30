@@ -12,6 +12,7 @@ use levinriegner\craftcognitoauth\CraftJwtAuth;
 class AWSCognitoService extends Component
 {
     private $region;
+    private $profile;
     private $client_id;
     private $userpool_id;
 
@@ -20,6 +21,7 @@ class AWSCognitoService extends Component
     public function __construct()
     {
         $this->region = CraftJwtAuth::getInstance()->getSettings()->getRegion();
+        $this->profile = CraftJwtAuth::getInstance()->getSettings()->getProfile();
         $this->client_id = CraftJwtAuth::getInstance()->getSettings()->getClientId();
         $this->userpool_id = CraftJwtAuth::getInstance()->getSettings()->getUserPoolId();
 
@@ -30,9 +32,9 @@ class AWSCognitoService extends Component
     {
         $this->client = new CognitoIdentityProviderClient([
           'version' => '2016-04-18',
-          'region' => $this->region
+          'region' => $this->region,
+          'profile' => $this->profile
         ]);
-        
     }
 
     public function refreshAuthentication($username, $refreshToken)

@@ -12,16 +12,17 @@
 namespace levinriegner\craftcognitoauth\services\validators;
 
 use Craft;
-use craft\base\Component;
 use craft\elements\User;
 use craft\helpers\StringHelper;
-use craft\helpers\ArrayHelper;
 use levinriegner\craftcognitoauth\CraftJwtAuth;
-use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer\Rsa\Sha256;
-use Lcobucci\JWT\Token;
 
 use CoderCat\JWKToPEM\JWKConverter;
+use Lcobucci\JWT\Encoding\JoseEncoder;
+use Lcobucci\JWT\Signer\Key\InMemory;
+use Lcobucci\JWT\Token\Parser;
+use Lcobucci\JWT\Validation\Constraint\SignedWith;
+use Lcobucci\JWT\Validation\Validator;
 use levinriegner\craftcognitoauth\services\AbstractValidator;
 
 /**
@@ -71,7 +72,8 @@ class JWT extends AbstractValidator
     protected function parseToken($accessToken)
     {
         if (count(explode('.', $accessToken)) === 3) {
-            $token = (new Parser())->parse((string) $accessToken);
+            $parser = new Parser(new JoseEncoder());
+            $token = $parser->parse((string) $accessToken);
 
             return $token;
         }
@@ -79,12 +81,15 @@ class JWT extends AbstractValidator
         return null;
     }
 
+    /**
+     * @param \Lcobucci\JWT\Token\Plain $token
+     */
     protected function verifyToken($token)
     {
         $jwks = json_decode(file_get_contents($this->jwksUrl), true);
-        $jwk = null;
+        $jwk = [];
         foreach($jwks['keys'] as $struct) {
-            if ($token->getHeader('kid') === $struct['kid']) {
+            if ($token->headers()->get('kid') === $struct['kid']) {
                 $jwk = $struct;
                 break;
             }
@@ -94,9 +99,7 @@ class JWT extends AbstractValidator
         $convertedJwk = $jwkConverter->toPEM($jwk);
 
         // Attempt to verify the token
-        $verify = $token->verify((new Sha256()), $convertedJwk);
-
-        return $verify;
+        return (new Validator())->validate($token, new SignedWith(new Sha256(), InMemory::plainText($convertedJwk)));
     }
 
     protected function getIssuerByToken($token){
@@ -104,11 +107,14 @@ class JWT extends AbstractValidator
         return 'cognito';
     }
 
+    /**
+     * @param \Lcobucci\JWT\Token\Plain $token
+     */
     protected function getUserByToken($token)
     {
         // Derive the username from the subject in the token
-        $email = $token->getClaim('email', '');
-        $userName = $token->getClaim('sub', '');
+        $email = $token->claims()->get('email', '');
+        $userName = $token->claims()->get('sub', '');
 
         // Look for the user with email
         $user = Craft::$app->users->getUserByUsernameOrEmail($email ?: $userName);
@@ -116,22 +122,25 @@ class JWT extends AbstractValidator
         return $user;
     }
 
+    /**
+     * @param \Lcobucci\JWT\Token\Plain $token
+     */
     protected function createUserByToken($token)
     {
         // Email is a mandatory field
-        if ($token->hasClaim('email')) {
-            $email = $token->getClaim('email');
+        if ($token->claims()->has('email')) {
+            $email = $token->claims()->get('email');
 
             // Create a new user and populate with claims
             $user = new User();
 
             // Set username and email
             $user->email = $email;
-            $user->username = $token->getClaim('cognito:username', $email);
+            $user->username = $token->claims()->get('cognito:username', $email);
 
             // These are optional, so pass empty string as the default
-            $user->firstName = $token->getClaim('given_name', '');
-            $user->lastName = $token->getClaim('family_name', '');
+            $user->firstName = $token->claims()->get('given_name', '');
+            $user->lastName = $token->claims()->get('family_name', '');
 
             // Attempt to save the user
             $success = Craft::$app->getElements()->saveElement($user);

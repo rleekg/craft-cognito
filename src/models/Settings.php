@@ -11,9 +11,9 @@
 
 namespace levinriegner\craftcognitoauth\models;
 
-use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
+use craft\helpers\App;
 
 /**
  * @author    Mike Pierce
@@ -30,6 +30,7 @@ class Settings extends Model
      */
     public $autoCreateUser = false;
     public $region = '';
+    public $profile = '';
     public $clientId = '';
     public $userpoolId = '';
     public $jwks = '';
@@ -52,7 +53,7 @@ class Settings extends Model
                 'class' => EnvAttributeParserBehavior::class,
                 'attributes' => [
                     'autoCreateUser',
-                    'region','clientId','userpoolId','jwks',
+                    'region','profile','clientId','userpoolId','jwks',
                     'samlCert', 'samlIdPLogin'
                 ],
             ],
@@ -68,6 +69,7 @@ class Settings extends Model
             ['jwtEnabled', 'boolean'],
             ['autoCreateUser', 'boolean'],
             ['region', 'string'],
+            ['profile', 'string'],
             ['clientId', 'string'],
             ['userpoolId', 'string'],
             ['jwks', 'string'],
@@ -79,37 +81,42 @@ class Settings extends Model
 
     public function getAutoCreateUser(): bool
     {
-        return boolval(Craft::parseEnv($this->autoCreateUser));
+        return boolval(App::parseEnv($this->autoCreateUser));
+    }
+
+    public function getProfile(): string
+    {
+        return App::parseEnv($this->profile);
     }
 
     public function getRegion(): string
     {
-        return Craft::parseEnv($this->region);
+        return App::parseEnv($this->region);
     }
 
     public function getClientId(): string
     {
-        return Craft::parseEnv($this->clientId);
+        return App::parseEnv($this->clientId);
     }
 
     public function getUserPoolId(): string
     {
-        return Craft::parseEnv($this->userpoolId);
+        return App::parseEnv($this->userpoolId);
     }
 
     public function getJwks(): string
     {
-        return Craft::parseEnv($this->jwks);
+        return App::parseEnv($this->jwks);
     }
 
     public function getSamlCert(): string
     {
-        return Craft::parseEnv($this->samlCert);
+        return App::parseEnv($this->samlCert);
     }
 
     public function getSamlIdpLogin(): string
     {
-        return Craft::parseEnv($this->samlIdPLogin);
+        return App::parseEnv($this->samlIdPLogin);
     }
 
     public function getSamlEnabled(): bool
