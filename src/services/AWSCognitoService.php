@@ -30,11 +30,17 @@ class AWSCognitoService extends Component
 
     public function initialize() : void
     {
-        $this->client = new CognitoIdentityProviderClient([
-          'version' => '2016-04-18',
-          'region' => $this->region,
-          'profile' => $this->profile
-        ]);
+        $params = [
+            'version' => '2016-04-18',
+            'region' => $this->region
+        ];
+
+        //AWS profile is optional (if empty, an IAM role might be used)
+        if($this->profile){
+            $params['profile'] = $this->profile;
+        }
+
+        $this->client = new CognitoIdentityProviderClient($params);
     }
 
     public function refreshAuthentication($username, $refreshToken)
