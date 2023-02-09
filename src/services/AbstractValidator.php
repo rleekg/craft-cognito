@@ -52,12 +52,17 @@ abstract class AbstractValidator extends Component{
             }
 
             if ($user && $user->id) {
+                
+                // Get the session duration
+                $generalConfig = Craft::$app->getConfig()->getGeneral();
+                $duration = $generalConfig->userSessionDuration;
+
                 /*
                 * We need to login before triggering the event
                 * because the twig globals are updated before the user is logged in
                 * This causes the currentUser twig variable to be null even though the user is logged
                 */
-                Craft::$app->user->loginByUserId($user->id);
+                Craft::$app->user->loginByUserId($user->id, $duration);
 
                 if($userCreated && $this->hasEventHandlers(self::EVENT_AFTER_CREATE_USER)){
                     $event = new UserCreateEvent(['user' => $user, 'issuer' => $this->getIssuerByToken($token)]);    
