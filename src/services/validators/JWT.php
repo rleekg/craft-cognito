@@ -149,6 +149,7 @@ class JWT extends AbstractValidator
             if ($success) {
                 // Assign the user to the default public group
                 Craft::$app->users->assignUserToDefaultGroup($user);
+                Craft::$app->users->activateUser();
 
                 return $user;
             } 
