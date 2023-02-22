@@ -169,10 +169,14 @@ class AuthController extends Controller
         if(strlen($cognitoError) == 0){
             $existingUser = Craft::$app->users->getUserByUsernameOrEmail($username);
             if($existingUser){
-                if($firstname)
+                if($firstname){
+                    $existingUser->fullName = null;
                     $existingUser->firstName = $firstname;
-                if($lastname)
+                }
+                if($lastname){
+                    $existingUser->fullName = null;
                     $existingUser->lastName = $lastname;
+                }
                 if($email)
                     $existingUser->email = $email;
 
