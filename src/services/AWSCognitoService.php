@@ -2,11 +2,9 @@
 
 namespace levinriegner\craftcognitoauth\services;
 
-use Craft;
 use craft\base\Component;
 use Aws\CognitoIdentityProvider\CognitoIdentityProviderClient;
-use Aws\CognitoIdentityProvider\Exception\CognitoIdentityProviderException;
-use Lcobucci\JWT\Token;
+use Lcobucci\JWT\Token\Plain;
 use levinriegner\craftcognitoauth\CraftJwtAuth;
 
 class AWSCognitoService extends Component
@@ -332,16 +330,29 @@ class AWSCognitoService extends Component
         return '';
     }
 
-    public function getEmail(?Token $token){
-        if(!$token) return '';
-        
-        return $token->getClaim('email','');
+    public function getUser($username) {
+        try {
+            return $this->client->adminGetUser([
+                'Username' => $username,
+                'UserPoolId' => $this->userpool_id
+            ]);
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+
+        return null;
     }
 
-    public function isAdmin(?Token $token){
+    public function getEmail(?Plain $token){
+        if(!$token) return '';
+        
+        return $token->claims()->get('email','');
+    }
+
+    public function isAdmin(?Plain $token){
         if(!$token) return false;
 
-        $groups = $token->getClaim('cognito:groups',[]);
+        $groups = $token->claims()->get('cognito:groups',[]);
         if($groups && in_array('admin', $groups)){
             return true;
         }
