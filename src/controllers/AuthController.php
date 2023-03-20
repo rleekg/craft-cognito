@@ -26,19 +26,25 @@ class AuthController extends Controller
     const EVENT_BEFORE_LOGIN_COGNITO = 'beforeLoginCognito';
     const EVENT_AFTER_LOGIN_COGNITO = 'afterLoginCognito';
 
-    protected array|int|bool $allowAnonymous = ['register','confirm','confirmrequest','login',
-            'forgotpasswordrequest','forgotpassword','refresh'];
+    protected array|int|bool $allowAnonymous = [
+        'register',
+        'confirm',
+        'confirmrequest',
+        'login',
+        'forgotpasswordrequest',
+        'forgotpassword',
+        'refresh',
+        'callback'
+    ];
 
-    public function beforeAction($action): bool
-	{
+    public function beforeAction($action): bool {
 
         $this->enableCsrfValidation = false;
 
 		return parent::beforeAction($action);
 	}
 
-    public function actionRegister()
-    {
+    public function actionRegister() {
         $this->requirePostRequest();
         
         $email      = Craft::$app->getRequest()->getRequiredBodyParam('email');
@@ -56,8 +62,7 @@ class AuthController extends Controller
         }
     }
 
-    public function actionConfirm()
-    {
+    public function actionConfirm() {
         $email = Craft::$app->getRequest()->getRequiredBodyParam('email');
         $code = Craft::$app->getRequest()->getRequiredBodyParam('code');
 
@@ -69,8 +74,7 @@ class AuthController extends Controller
         }
     }
 
-    public function actionConfirmrequest()
-    {
+    public function actionConfirmrequest() {
         $email = Craft::$app->getRequest()->getRequiredBodyParam('email');
 
         $cognitoError = CraftJwtAuth::getInstance()->cognito->resendConfirmationCode($email);
@@ -81,8 +85,7 @@ class AuthController extends Controller
         } 
     }
 
-    public function actionLogin()
-    {
+    public function actionLogin() {
         $email = Craft::$app->getRequest()->getRequiredBodyParam('email');
         $password = Craft::$app->getRequest()->getRequiredBodyParam('password');
 
@@ -109,8 +112,7 @@ class AuthController extends Controller
         }
     }
 
-    public function actionForgotpasswordrequest()
-    {
+    public function actionForgotpasswordrequest() {
         $email = Craft::$app->getRequest()->getRequiredBodyParam('email');
 
         $cognitoError = CraftJwtAuth::getInstance()->cognito->sendPasswordResetMail($email);
@@ -121,8 +123,7 @@ class AuthController extends Controller
         }
     }
 
-    public function actionForgotpassword()
-    {
+    public function actionForgotpassword() {
         $email = Craft::$app->getRequest()->getRequiredBodyParam('email');
         $password = Craft::$app->getRequest()->getRequiredBodyParam('password');
         $code = Craft::$app->getRequest()->getRequiredBodyParam('code');
@@ -135,8 +136,7 @@ class AuthController extends Controller
         }
     }
 
-    public function actionRefresh()
-    {
+    public function actionRefresh() {
         $email = Craft::$app->getRequest()->getRequiredBodyParam('email');
         $token = Craft::$app->getRequest()->getRequiredBodyParam('token');
 
@@ -152,8 +152,7 @@ class AuthController extends Controller
         }
     }
 
-    public function actionUpdate()
-    {
+    public function actionUpdate() {
         $username   = Craft::$app->getRequest()->getRequiredBodyParam('username');
         $email      = Craft::$app->getRequest()->getBodyParam('email');
         $firstname  = Craft::$app->getRequest()->getBodyParam('firstname');
@@ -188,8 +187,7 @@ class AuthController extends Controller
         }
     }
 
-    public function actionDelete()
-    {
+    public function actionDelete() {
         $email = Craft::$app->getRequest()->getRequiredBodyParam('email');
 
         $user = $this->getCurrentUser();
@@ -209,8 +207,7 @@ class AuthController extends Controller
         }
     }
 
-    public function actionDisable()
-    {
+    public function actionDisable() {
         $email = Craft::$app->getRequest()->getRequiredBodyParam('email');
 
         $user = $this->getCurrentUser();
@@ -226,7 +223,26 @@ class AuthController extends Controller
         }
     }
 
-    private function _handleResponse($response, $responseCode, $startSession = false){
+    public function actionCallback(){
+        $code = Craft::$app->getRequest()->getQueryParam('code');
+        $client = new \GuzzleHttp\Client();
+        $options =  [
+            'form_params' => [
+                'code' => $code,
+                'grant_type' => 'authorization_code',
+                'client_id' => CraftJwtAuth::getInstance()->getSettings()->getClientId(),
+                'redirect_uri' => CraftJwtAuth::getInstance()->getSettings()->getCallbackUrl(),
+            ]
+        ];
+
+        $getTokenResponse = $client->request('POST', CraftJwtAuth::getInstance()->getSettings()->getCognitoDomain() ."/oauth2/token", $options);
+        $getTokenResponseJsonBody = $getTokenResponse->getBody()->getContents();
+        $getTokenResponseArray = json_decode($getTokenResponseJsonBody, true);
+
+        return $this->_handleResponse(['token' => $getTokenResponseArray['id_token']], 200, true, '/');
+    }
+
+    private function _handleResponse($response, $responseCode, $startSession = false, $redirectUrl = null){
         $request = Craft::$app->getRequest();
         if($responseCode == 200 && $startSession)
             CraftJwtAuth::getInstance()->jwt->parseTokenAndCreateUser($response['token']);
@@ -239,8 +255,7 @@ class AuthController extends Controller
                 // Get the return URL
                 $userSession = Craft::$app->getUser();
 
-                $returnUrl = $request->getParam('redirectUrl') ? 
-                                $request->getParam('redirectUrl') : $userSession->getReturnUrl();
+                $returnUrl = $redirectUrl ?: ($request->getParam('redirectUrl') ?: $userSession->getReturnUrl());
 
                 return $this->redirectToPostedUrl($userSession->getIdentity(), $returnUrl);
             }else{

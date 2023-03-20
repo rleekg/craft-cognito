@@ -83,6 +83,24 @@
         }}
 
         {{ forms.autosuggestField({
+            label: 'AWS Cognito callback URL',
+            instructions: 'Enter your AWS Cognito callback URL (under General settings)',
+            suggestEnvVars: true,
+            id: 'callbackUrl',
+            name: 'settings[callbackUrl]',
+            value: settings['callbackUrl']})
+        }}
+
+        {{ forms.autosuggestField({
+            label: 'AWS Cognito domain',
+            instructions: 'Enter your AWS Cognito domain (under App integration -> Domain)',
+            suggestEnvVars: true,
+            id: 'cognitoDomain',
+            name: 'settings[cognitoDomain]',
+            value: settings['cognitoDomain']})
+        }}
+
+        {{ forms.autosuggestField({
             label: 'JSON Web Key Set URL',
             instructions: 'Enter your JSON Web Key Set URL (JWKS), used for verifying incoming Cognito JWTs',
             suggestEnvVars: true,

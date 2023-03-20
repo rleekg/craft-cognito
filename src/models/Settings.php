@@ -33,6 +33,8 @@ class Settings extends Model
     public $profile = '';
     public $clientId = '';
     public $userpoolId = '';
+    public $callbackUrl = '';
+    public $cognitoDomain = '';
     public $jwks = '';
     public $jwtEnabled = true;
     
@@ -53,7 +55,7 @@ class Settings extends Model
                 'class' => EnvAttributeParserBehavior::class,
                 'attributes' => [
                     'autoCreateUser',
-                    'region','profile','clientId','userpoolId','jwks',
+                    'region','profile','clientId','callbackUrl','cognitoDomain','userpoolId','jwks',
                     'samlCert', 'samlIdPLogin'
                 ],
             ],
@@ -72,6 +74,8 @@ class Settings extends Model
             ['profile', 'string'],
             ['clientId', 'string'],
             ['userpoolId', 'string'],
+            ['callbackUrl', 'string'],
+            ['cognitoDomain', 'string'],
             ['jwks', 'string'],
             ['samlEnabled', 'boolean'],
             ['samlCert', 'string'],
@@ -102,6 +106,16 @@ class Settings extends Model
     public function getUserPoolId(): string
     {
         return App::parseEnv($this->userpoolId);
+    }
+
+    public function getCallbackUrl(): string
+    {
+        return App::parseEnv($this->callbackUrl);
+    }
+
+    public function getCognitoDomain(): string
+    {
+        return App::parseEnv($this->cognitoDomain);
     }
 
     public function getJwks(): string
