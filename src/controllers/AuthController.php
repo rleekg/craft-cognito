@@ -11,6 +11,7 @@
 
 namespace levinriegner\craftcognitoauth\controllers;
 
+use Aws\Exception\AwsException;
 use Craft;
 use craft\web\Controller;
 use levinriegner\craftcognitoauth\CraftJwtAuth;
@@ -114,12 +115,15 @@ class AuthController extends Controller
 
     public function actionForgotpasswordrequest() {
         $email = Craft::$app->getRequest()->getRequiredBodyParam('email');
-
-        $cognitoError = CraftJwtAuth::getInstance()->cognito->sendPasswordResetMail($email);
-        if(strlen($cognitoError) == 0){
-            return $this->_handleResponse(null, 200);
-        }else{
-            return $this->_handleResponse(['status' => 1, 'error' => $cognitoError], 500);
+        try{
+            $cognitoError = CraftJwtAuth::getInstance()->cognito->sendPasswordResetMail($email);
+            if(strlen($cognitoError) == 0){
+                return $this->_handleResponse(null, 200);
+            }else{
+                return $this->_handleResponse(['status' => 1, 'error' => $cognitoError], 500);
+            }
+        }catch(AwsException $e) {
+            return $this->_handleResponse(['status' => 1, 'error' => $e->getMessage(), 'message' => $e->getAwsErrorMessage()], 500);
         }
     }
 
@@ -128,11 +132,15 @@ class AuthController extends Controller
         $password = Craft::$app->getRequest()->getRequiredBodyParam('password');
         $code = Craft::$app->getRequest()->getRequiredBodyParam('code');
 
-        $cognitoError = CraftJwtAuth::getInstance()->cognito->resetPassword($code, $password, $email);
-        if(strlen($cognitoError) == 0){
-            return $this->_handleResponse(null, 200);
-        }else{
-            return $this->_handleResponse(['status' => 1, 'error' => $cognitoError], 500);
+        try{
+            $cognitoError = CraftJwtAuth::getInstance()->cognito->resetPassword($code, $password, $email);
+            if(strlen($cognitoError) == 0){
+                return $this->_handleResponse(null, 200);
+            }else{
+                return $this->_handleResponse(['status' => 1, 'error' => $cognitoError], 500);
+            }
+        }catch(AwsException $e) {
+            return $this->_handleResponse(['status' => 1, 'error' => $e->getMessage(), 'message' => $e->getAwsErrorMessage()], 500);
         }
     }
 
@@ -259,9 +267,11 @@ class AuthController extends Controller
 
                 return $this->redirectToPostedUrl($userSession->getIdentity(), $returnUrl);
             }else{
-                Craft::$app->getUrlManager()->setRouteParams([
-                    'errorMessage' => $response['error'],
-                ]);
+                $params = ['errorMessage' => $response['error']];
+                if(array_key_exists('message', $response))
+                    $params['errorDisplayMessage'] = $response['message'];
+
+                Craft::$app->getUrlManager()->setRouteParams($params);
 
                 return null;
             }

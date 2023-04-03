@@ -4,6 +4,7 @@ namespace levinriegner\craftcognitoauth\services;
 
 use craft\base\Component;
 use Aws\CognitoIdentityProvider\CognitoIdentityProviderClient;
+use Aws\Exception\AwsException;
 use Lcobucci\JWT\Token\Plain;
 use levinriegner\craftcognitoauth\CraftJwtAuth;
 
@@ -307,6 +308,8 @@ class AWSCognitoService extends Component
                 'ClientId' => $this->client_id,
                 'Username' => $email
             ]);
+        } catch (AwsException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return $e->getMessage();
         }
@@ -323,6 +326,8 @@ class AWSCognitoService extends Component
                 'Password' => $password,
                 'Username' => $email
             ]);
+        } catch (AwsException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return $e->getMessage();
         }
