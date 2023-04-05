@@ -166,12 +166,23 @@ class AuthController extends Controller
         $firstname  = Craft::$app->getRequest()->getBodyParam('firstname');
         $lastname   = Craft::$app->getRequest()->getBodyParam('lastname');
         $phone      = Craft::$app->getRequest()->getBodyParam('phone');
+        $password   = Craft::$app->getRequest()->getBodyParam('password');
 
         $user = $this->getCurrentUser();
         if(!$user->admin && $user->username != $username){
             return $this->_handleResponse(['status' => 1, 'error' => 'No admin rights'], 401);
         }
 
+        $requireUserPassword = CraftJwtAuth::getInstance()->getSettings()->getRequireUserPassword();
+        if($requireUserPassword) {
+            if(!$password)
+                return $this->_handleResponse(['status' => 1, 'error' => 'Password is required'], 400);
+            
+            $response = CraftJwtAuth::getInstance()->cognito->authenticate($username, $password);
+            if(!$response || !array_key_exists('token', $response))
+                return $this->_handleResponse(['status' => 1, 'error' => 'Invalid password'], 400);
+        }
+            
         $cognitoError = CraftJwtAuth::getInstance()->cognito->updateUserAttributes($username, $firstname, $lastname, $phone, $email);
         if(strlen($cognitoError) == 0){
             $existingUser = Craft::$app->users->getUserByUsernameOrEmail($username);

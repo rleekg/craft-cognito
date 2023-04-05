@@ -46,6 +46,8 @@ class Settings extends Model
     
     public $samlEnabled = false;
 
+    public $requireUserPassword = false;
+
     // Public Methods
     // =========================================================================
     public function behaviors(): array
@@ -56,7 +58,7 @@ class Settings extends Model
                 'attributes' => [
                     'autoCreateUser',
                     'region','profile','clientId','callbackUrl','cognitoDomain','userpoolId','jwks',
-                    'samlCert', 'samlIdPLogin'
+                    'samlCert', 'samlIdPLogin','requireUserPassword'
                 ],
             ],
         ];
@@ -80,6 +82,7 @@ class Settings extends Model
             ['samlEnabled', 'boolean'],
             ['samlCert', 'string'],
             ['samlIdPLogin', 'string'],
+            ['requireUserPassword', 'boolean'],
         ];
     }
 
@@ -141,5 +144,10 @@ class Settings extends Model
     public function getJwtEnabled(): bool
     {
         return $this->jwtEnabled;
+    }
+
+    public function getRequireUserPassword(): bool
+    {
+        return $this->requireUserPassword;
     }
 }

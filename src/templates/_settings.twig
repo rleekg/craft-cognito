@@ -46,6 +46,14 @@
             required: true
         }) }}
 
+        {{ forms.lightswitchField({
+            label: "Require user password",
+            instructions: "If enabled, the user will be required to enter its password to update his data",
+            name: 'settings[requireUserPassword]',
+            on: settings.requireUserPassword,
+            required: true
+        }) }}
+
         {{ forms.autosuggestField({
             label: 'AWS profile name',
             instructions: 'Enter your AWS profile name (leave it empty to use an IAM role instead)',
