@@ -258,7 +258,9 @@ class AuthController extends Controller
         $getTokenResponseJsonBody = $getTokenResponse->getBody()->getContents();
         $getTokenResponseArray = json_decode($getTokenResponseJsonBody, true);
 
-        return $this->_handleResponse(['token' => $getTokenResponseArray['id_token']], 200, true, '/');
+        $afterLoginRedirect = Craft::$app->session->get('after_login_redirect');
+
+        return $this->_handleResponse(['token' => $getTokenResponseArray['id_token']], 200, true, $afterLoginRedirect ?? '/');
     }
 
     private function _handleResponse($response, $responseCode, $startSession = false, $redirectUrl = null){
